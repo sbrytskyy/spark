@@ -6,7 +6,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 public class UnionLogProblem {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
         /* "in/nasa_19950701.tsv" file contains 10000 log lines from one of NASA's apache server for July 1st, 1995.
            "in/nasa_19950801.tsv" file contains 10000 log lines for August 1st, 1995
@@ -25,13 +25,17 @@ public class UnionLogProblem {
         JavaRDD<String> input1 = context.textFile("in/nasa_19950701.tsv");
         JavaRDD<String> input2 = context.textFile("in/nasa_19950801.tsv");
 
-        JavaRDD<String> inputFiltered1 = input1.filter((String line) -> !line.startsWith("host"));
-        JavaRDD<String> inputFiltered2 = input2.filter((String line) -> !line.startsWith("host"));
+        JavaRDD<String> inputFiltered1 = input1.filter(UnionLogProblem::isNotHeader);
+        JavaRDD<String> inputFiltered2 = input2.filter(UnionLogProblem::isNotHeader);
 
         JavaRDD<String> union = inputFiltered1.union(inputFiltered2);
         JavaRDD<String> sample = union.sample(true, 0.001);
 
         sample.saveAsTextFile("out/sample_nasa_logs.tsv");
 
+    }
+
+    private static Boolean isNotHeader(String line) {
+        return !line.startsWith("host") && !line.endsWith("bytes");
     }
 }
