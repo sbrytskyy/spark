@@ -43,7 +43,19 @@ public class SortedWordCountProblem {
     JavaPairRDD<String, Integer> sortedWordsCounterRDD = wordsCounterRDD.sortByKey();
 
     List<Tuple2<String, Integer>> collect = sortedWordsCounterRDD.collect();
+
+    logger.info("Words count by alphabet");
     for (Tuple2<String, Integer> pair : collect) {
+      logger.info(pair._1() + ":" + pair._2());
+    }
+
+    JavaPairRDD<Integer, String> wordsReversedCounterRDD = wordsCounterRDD.mapToPair(Tuple2::swap);
+    JavaPairRDD<Integer, String> sortedByCountRDD = wordsReversedCounterRDD.sortByKey();
+
+    List<Tuple2<Integer, String>> collectReversed = sortedByCountRDD.collect();
+
+    logger.info("Words by count");
+    for (Tuple2<Integer, String> pair : collectReversed) {
       logger.info(pair._1() + ":" + pair._2());
     }
   }
