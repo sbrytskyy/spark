@@ -2,6 +2,8 @@ package com.sparkTutorial.pairRdd.groupbykey;
 
 // import java.util.Arrays;
 // import java.util.List;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Level;
@@ -52,10 +54,9 @@ public class AirportsByCountryProblem {
     JavaPairRDD<String, Iterable<String>> airportsByCountryRDD = airportCountryNamePairsRDD
         .groupByKey();
 
-    Map<String, Iterable<String>> airportsByCountry = airportsByCountryRDD.collectAsMap();
-    Set<Map.Entry<String, Iterable<String>>> entries = airportsByCountry.entrySet();
-    for (Map.Entry<String, Iterable<String>> entry : entries) {
-      logger.info(entry.getKey() + ":" + entry.getValue());
+    List<Tuple2<String, Iterable<String>>> collect = airportsByCountryRDD.sortByKey().collect();
+    for (Tuple2<String, Iterable<String>> entry : collect) {
+      logger.info(entry._1() + ":" + entry._2());
     }
   }
 }

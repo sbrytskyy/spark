@@ -1,6 +1,7 @@
 package com.sparkTutorial.pairRdd.aggregation.reducebykey.housePrice;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Level;
@@ -56,27 +57,29 @@ public class AverageHousePriceProblem {
 
     JavaRDD<String[]> housesAsArray = cleanedInput.map(line -> line.split(","));
 
-    JavaPairRDD<String, AvgCount> bedsPriceMap = housesAsArray
-        .mapToPair(house -> new Tuple2<>(house[3],
+    JavaPairRDD<Integer, AvgCount> bedsPriceMap = housesAsArray
+        .mapToPair(house -> new Tuple2<>(Integer.valueOf(house[3]),
             new AvgCount(1, Double.parseDouble(house[2]))));
 
-    JavaPairRDD<String, AvgCount> pricesByBeds = bedsPriceMap
+    JavaPairRDD<Integer, AvgCount> pricesByBeds = bedsPriceMap
         .reduceByKey((AvgCount x, AvgCount y) -> new AvgCount(x.getCount() + y.getCount(),
             Double.sum(x.getTotal(), y.getTotal())));
 
     logger.info("Houses price total:");
-    Set<Map.Entry<String, AvgCount>> housePricePair = pricesByBeds.collectAsMap().entrySet();
-    for (Map.Entry<String, AvgCount> entry : housePricePair) {
+    Set<Map.Entry<Integer, AvgCount>> housePricePair = pricesByBeds.collectAsMap().entrySet();
+    for (Map.Entry<Integer, AvgCount> entry : housePricePair) {
       logger.info(entry.getKey() + ":" + entry.getValue());
     }
 
-    JavaPairRDD<String, Double> averagePriceByBeds = pricesByBeds
+    JavaPairRDD<Integer, Double> averagePriceByBeds = pricesByBeds
         .mapValues(avg -> avg.getTotal() / avg.getCount());
 
+    JavaPairRDD<Integer, Double> sortedAveragePriceByBeds = averagePriceByBeds.sortByKey();
+
     logger.info("Houses price average:");
-    Set<Map.Entry<String, Double>> entries = averagePriceByBeds.collectAsMap().entrySet();
-    for (Map.Entry<String, Double> housePriceAvgPair : entries) {
-      logger.info(housePriceAvgPair.getKey() + ":" + housePriceAvgPair.getValue());
+    List<Tuple2<Integer, Double>> collect = sortedAveragePriceByBeds.collect();
+    for (Tuple2<Integer, Double> housePriceAvgPair : collect) {
+      logger.info(housePriceAvgPair._1() + ":" + housePriceAvgPair._2());
     }
   }
 
