@@ -1,9 +1,20 @@
 package com.sparkTutorial.pairRdd.aggregation.reducebykey.housePrice;
 
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import scala.Tuple2;
+
 public class AverageHousePriceProblem {
 
-    public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
 
         /* Create a Spark program to read the house data from in/RealEstate.csv,
            output the average price for houses with different number of bedrooms.
@@ -34,6 +45,42 @@ public class AverageHousePriceProblem {
 
            3, 1 and 2 mean the number of bedrooms. 325000 means the average price of houses with 3 bedrooms is 325000.
          */
+
+    Logger.getLogger("org").setLevel(Level.ERROR);
+    Logger logger = Logger.getLogger(AverageHousePriceProblem.class);
+
+    SparkConf conf = new SparkConf().setAppName("AverageHousePriceProblem").setMaster("local[2]");
+    JavaSparkContext ctx = new JavaSparkContext(conf);
+
+    JavaRDD<String> input = ctx.textFile("in/RealEstate.csv");
+    JavaRDD<String> cleanedInput = input.filter(line -> !line.contains("Bedrooms"));
+
+    JavaRDD<String[]> housesAsArray = cleanedInput.map(line -> line.split(","));
+
+    JavaPairRDD<Integer, AvgCount> bedsPriceMap = housesAsArray
+        .mapToPair(house -> new Tuple2<>(Integer.valueOf(house[3]),
+            new AvgCount(1, Double.parseDouble(house[2]))));
+
+    JavaPairRDD<Integer, AvgCount> pricesByBeds = bedsPriceMap
+        .reduceByKey((AvgCount x, AvgCount y) -> new AvgCount(x.getCount() + y.getCount(),
+            Double.sum(x.getTotal(), y.getTotal())));
+
+    logger.info("Houses price total:");
+    Set<Map.Entry<Integer, AvgCount>> housePricePair = pricesByBeds.collectAsMap().entrySet();
+    for (Map.Entry<Integer, AvgCount> entry : housePricePair) {
+      logger.info(entry.getKey() + ":" + entry.getValue());
     }
+
+    JavaPairRDD<Integer, Double> averagePriceByBeds = pricesByBeds
+        .mapValues(avg -> avg.getTotal() / avg.getCount());
+
+    JavaPairRDD<Integer, Double> sortedAveragePriceByBeds = averagePriceByBeds.sortByKey();
+
+    logger.info("Houses price average:");
+    List<Tuple2<Integer, Double>> collect = sortedAveragePriceByBeds.collect();
+    for (Tuple2<Integer, Double> housePriceAvgPair : collect) {
+      logger.info(housePriceAvgPair._1() + ":" + housePriceAvgPair._2());
+    }
+  }
 
 }
