@@ -1,5 +1,11 @@
 package com.sparkTutorial.sparkSql;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
 
 public class HousePriceProblem {
 
@@ -38,4 +44,14 @@ public class HousePriceProblem {
         |.............................................|
 
          */
+
+	public static void main(String[] args) {
+		
+		Logger.getLogger("org").setLevel(Level.ERROR);
+		
+		SparkConf conf = new SparkConf().setAppName("HousePriceProblem").setMaster("local[2]");
+		SparkContext ctx = new SparkContext(conf);
+		SparkSession session = new SparkSession(ctx);
+
+	}
 }

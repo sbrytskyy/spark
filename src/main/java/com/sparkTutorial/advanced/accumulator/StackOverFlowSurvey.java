@@ -20,17 +20,23 @@ public class StackOverFlowSurvey {
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkContext);
 
         final LongAccumulator total = new LongAccumulator();
+        final LongAccumulator totalTotal = new LongAccumulator();
         final LongAccumulator missingSalaryMidPoint = new LongAccumulator();
+        final LongAccumulator toltalBytes = new LongAccumulator();
 
         total.register(sparkContext, Option.apply("total"), false);
+        totalTotal.register(sparkContext, Option.apply("totalTotal"), true);
         missingSalaryMidPoint.register(sparkContext, Option.apply("missing salary middle point"), false);
-
+        toltalBytes.register(sparkContext, Option.apply("Toltal Bytes"), true);
+        
         JavaRDD<String> responseRDD = javaSparkContext.textFile("in/2016-stack-overflow-survey-responses.csv");
 
         JavaRDD<String> responseFromCanada = responseRDD.filter(response -> {
             String[] splits = response.split(Utils.COMMA_DELIMITER, -1);
 
             total.add(1);
+            totalTotal.add(1);
+            toltalBytes.add(response.length());
 
             if (splits[14].isEmpty()) {
                 missingSalaryMidPoint.add(1);
@@ -42,6 +48,8 @@ public class StackOverFlowSurvey {
 
         System.out.println("Count of responses from Canada: " + responseFromCanada.count());
         System.out.println("Total count of responses: " + total.value());
+        System.out.println("Total Total count of responses: " + totalTotal.value());
         System.out.println("Count of responses missing salary middle point: " + missingSalaryMidPoint.value());
+        System.out.println("Total bytes: " + toltalBytes.value());
     }
 }
