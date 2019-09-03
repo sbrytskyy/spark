@@ -1,15 +1,23 @@
 package com.sparkTutorial.sparkSql;
 
+import java.util.List;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.DataFrameReader;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.RelationalGroupedDataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import static org.apache.spark.sql.functions.avg;
+import static org.apache.spark.sql.functions.col;
+import static org.apache.spark.sql.functions.max;
 
 public class HousePriceProblem {
 
-        /* Create a Spark program to read the house data from in/RealEstate.csv,
+		/* Create a Spark program to read the house data from in/RealEstate.csv,
            group by location, aggregate the average price per SQ Ft and max price, and sort by average price per SQ Ft.
 
         The houses dataset contains a collection of recent real estate listings in San Luis Obispo county and
@@ -45,13 +53,32 @@ public class HousePriceProblem {
 
          */
 
+    private static final String LOCATION = "Location";
+	private static final String PRICE = "Price";
+	private static final String PRICE_SQ_FT = "Price SQ Ft";
+	private static final String AVG_PRICE_SQ_FT = "avg(Price SQ Ft)";
+
 	public static void main(String[] args) {
-		
+
 		Logger.getLogger("org").setLevel(Level.ERROR);
-		
+		Logger logger = Logger.getLogger(HousePriceProblem.class);
+
 		SparkConf conf = new SparkConf().setAppName("HousePriceProblem").setMaster("local[2]");
 		SparkContext ctx = new SparkContext(conf);
 		SparkSession session = new SparkSession(ctx);
 
+		DataFrameReader frameReader = session.read();
+
+		Dataset<Row> csv = frameReader.option("header", true).csv("in/RealEstate.csv");
+		Dataset<Row> dataset = csv.withColumn(PRICE_SQ_FT, col(PRICE_SQ_FT).cast("double"))
+				.withColumn(PRICE, col(PRICE).cast("double"));
+
+		// dataset.printSchema();
+		
+		RelationalGroupedDataset groupedDataset = dataset.groupBy(LOCATION);
+		
+		groupedDataset.agg(avg(PRICE_SQ_FT), max(PRICE)).orderBy(col(AVG_PRICE_SQ_FT).desc()).show();
+		
+		session.close();
 	}
 }
