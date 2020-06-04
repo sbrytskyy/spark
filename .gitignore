@@ -5,5 +5,6 @@
 out/
 build/
 /bin/
+/target/
 .cache-main
 .idea/
